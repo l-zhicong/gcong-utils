@@ -1,3 +1,3 @@
-module github.com/L-zhicong/gcong-utils
+module github.com/l-zhicong/gcong-utils
 
 go 1.18
