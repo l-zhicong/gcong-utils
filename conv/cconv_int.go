@@ -80,6 +80,6 @@ func Int64(any interface{}) int64 {
 			}
 			return v
 		}
-		return 3
+		return 0
 	}
 }
