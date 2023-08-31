@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -23,7 +22,8 @@ const (
 
 type clog struct {
 	logPath string
-	isAsync bool
+	isAsync bool //开异步必须保证主线程在运行
+	isPrint bool
 	log     log.Logger
 	grPool  *cpool.Pool
 }
@@ -31,31 +31,95 @@ type clog struct {
 type Config struct {
 	LogPath string
 	PoolNum int
+	IsAsync bool
+	IsPrint bool
 }
 
 func New(config ...*Config) (logs clog) {
+	if len(config) > 0 {
+		con := config[0]
+		if len(con.LogPath) > 0 {
+			logs.SetPath(con.LogPath)
+		} else {
+			logs.SetPath("log/" + time.Now().Format("2006-01")) //默认路径
+		}
+		if con.PoolNum > 0 {
+			logs.grPool = cpool.New().SetConfig(con.PoolNum)
+		}
+		logs.isAsync = con.IsAsync
+		logs.isPrint = con.IsPrint
+		return
+	}
 	logs.grPool = cpool.New().SetConfig(poolNum)
 	logs.SetPath("log/" + time.Now().Format("2006-01")) //默认路径
-	if len(config) > 1 {
-		con := config[0]
-		logs.SetPath(con.LogPath)
-		logs.SetPool(con.PoolNum)
-	}
 	return
 }
 
 func (l *clog) SetPath(path ...string) *clog {
 	if len(path) > 0 && len(path[0]) > 0 {
 		rootPath, _ := getPath()
-		l.logPath = rootPath + "/" + path[0] + "/" + fileName + ".log"
+		l.logPath = rootPath + "/" + path[0]
 	}
-	l.log.SetOutput(cFile(l.logPath))
+	checkPath(l.logPath)
 	return l
 }
 
 func (l *clog) SetPool(poolNum int) clog {
 	l.grPool.SetConfig(poolNum)
 	return *l
+}
+
+func (l *clog) cFile(fileName string) *os.File {
+	path := l.logPath + "/" + fileName + ".log"
+	//检测目录，创建
+	logFile, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		logFile, err = os.Create(path)
+		if err != nil {
+			panic(err)
+		}
+		return logFile
+	} else {
+		return logFile
+	}
+}
+
+func (l *clog) Info(format string, param ...any) {
+	Job := func() {
+		l.log.SetOutput(l.cFile(fileName))
+		value := INFO + ":" + fmt.Sprintf(format, param...) + "\t" + time.Now().Format("2006-01-02 15:04:05")
+		l.log.Println(value)
+		if l.isPrint {
+			fmt.Println(value)
+		}
+	}
+	l.asyncLog(Job)
+}
+
+func (l *clog) Error(format string, param ...any) {
+	Job := func() {
+		l.log.SetOutput(l.cFile(fileName))
+		value := Err + ":" + fmt.Sprintf(format, param...) + "\t" + time.Now().Format("2006-01-02 15:04:05")
+		l.log.Println(value)
+		if l.isPrint {
+			fmt.Println(value)
+		}
+	}
+	l.asyncLog(Job)
+}
+
+func (l *clog) asyncLog(Job func()) {
+	if l.isAsync {
+		l.grPool.AddJob(Job)
+	} else {
+		Job()
+	}
+}
+
+func (l *clog) print() {
+	if l.isPrint {
+
+	}
 }
 
 func getPath() (projectRoot string, err error) {
@@ -68,30 +132,10 @@ func getPath() (projectRoot string, err error) {
 	return
 }
 
-//TODO 未处理异常
-func cFile(logPath string) *os.File {
-	dir := filepath.Dir(logPath)
-	//检测目录，创建
-	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+func checkPath(logPath string) string {
+	err := os.MkdirAll(logPath, os.ModePerm)
 	if err != nil {
-		err = os.MkdirAll(dir, os.ModePerm)
-		if err != nil {
-			panic(err)
-		}
-		logFile, err = os.Create(logPath)
-		if err != nil {
-			panic(err)
-		}
-		return logFile
-	} else {
-		return logFile
+		panic(err)
 	}
-}
-
-func (l *clog) Info(format string, param ...any) {
-	l.log.Println(INFO + ":" + fmt.Sprintf(format, param...) + "\t" + time.Now().Format("2006-01-02 15:04:05"))
-}
-
-func (l *clog) Error(format string, param ...any) {
-	l.log.Println(Err + ":" + fmt.Sprintf(format, param...) + "\t" + time.Now().Format("2006-01-02 15:04:05"))
+	return logPath
 }
