@@ -31,23 +31,15 @@ type clog struct {
 type Config struct {
 	LogPath string
 	PoolNum int
-	IsAsync bool
-	IsPrint bool
+	isAsync bool
 }
 
 func New(config ...*Config) (logs clog) {
 	if len(config) > 0 {
 		con := config[0]
-		if len(con.LogPath) > 0 {
-			logs.SetPath(con.LogPath)
-		} else {
-			logs.SetPath("log/" + time.Now().Format("2006-01")) //默认路径
-		}
-		if con.PoolNum > 0 {
-			logs.grPool = cpool.New().SetConfig(con.PoolNum)
-		}
-		logs.isAsync = con.IsAsync
-		logs.isPrint = con.IsPrint
+		logs.SetPath(con.LogPath)
+		logs.grPool = cpool.New().SetConfig(con.PoolNum)
+		logs.isAsync = con.isAsync
 		return
 	}
 	logs.grPool = cpool.New().SetConfig(poolNum)
@@ -87,11 +79,7 @@ func (l *clog) cFile(fileName string) *os.File {
 func (l *clog) Info(format string, param ...any) {
 	Job := func() {
 		l.log.SetOutput(l.cFile(fileName))
-		value := INFO + ":" + fmt.Sprintf(format, param...) + "\t" + time.Now().Format("2006-01-02 15:04:05")
-		l.log.Println(value)
-		if l.isPrint {
-			fmt.Println(value)
-		}
+		l.log.Println(INFO + ":" + fmt.Sprintf(format, param...) + "\t" + time.Now().Format("2006-01-02 15:04:05"))
 	}
 	l.asyncLog(Job)
 }
@@ -99,11 +87,7 @@ func (l *clog) Info(format string, param ...any) {
 func (l *clog) Error(format string, param ...any) {
 	Job := func() {
 		l.log.SetOutput(l.cFile(fileName))
-		value := Err + ":" + fmt.Sprintf(format, param...) + "\t" + time.Now().Format("2006-01-02 15:04:05")
-		l.log.Println(value)
-		if l.isPrint {
-			fmt.Println(value)
-		}
+		l.log.Println(Err + ":" + fmt.Sprintf(format, param...) + "\t" + time.Now().Format("2006-01-02 15:04:05"))
 	}
 	l.asyncLog(Job)
 }
