@@ -7,8 +7,11 @@ import (
 )
 
 func TestName(t *testing.T) {
-	logs := New(&Config{"logsss", 2, false, true})
+	logs := New(&Config{"logsss", 2, true})
 	logs.Info("111111%v", "222")
+	for true {
+
+	}
 }
 
 func TestFile(t *testing.T) {
