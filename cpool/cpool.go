@@ -1,5 +1,7 @@
 package cpool
 
+//TODO 等待子协程完事sync.WaitGroup
+
 type Pool struct {
 	max      int   //最大携程数
 	count    Count //正在运行任务数量
