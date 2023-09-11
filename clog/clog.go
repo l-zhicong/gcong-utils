@@ -78,7 +78,7 @@ func (l *clog) cFile(fileName string) *os.File {
 
 func (l *clog) Info(format string, param ...any) {
 	Job := func() {
-		l.log.SetOutput(l.cFile(fileName))
+		l.log.SetOutput(l.cFile(INFO + time.Now().Format("2006-01-02")))
 		l.log.Println(INFO + ":" + fmt.Sprintf(format, param...) + "\t" + time.Now().Format("2006-01-02 15:04:05"))
 	}
 	l.asyncLog(Job)
@@ -86,7 +86,7 @@ func (l *clog) Info(format string, param ...any) {
 
 func (l *clog) Error(format string, param ...any) {
 	Job := func() {
-		l.log.SetOutput(l.cFile(fileName))
+		l.log.SetOutput(l.cFile(Err + time.Now().Format("2006-01-02")))
 		l.log.Println(Err + ":" + fmt.Sprintf(format, param...) + "\t" + time.Now().Format("2006-01-02 15:04:05"))
 	}
 	l.asyncLog(Job)
