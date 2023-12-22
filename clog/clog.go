@@ -5,7 +5,7 @@ import (
 	"github.com/l-zhicong/gcong-utils/cpool"
 	"log"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -107,12 +107,11 @@ func (l *clog) print() {
 }
 
 func getPath() (projectRoot string, err error) {
-	cmd := exec.Command("go", "list", "-f", "{{.Dir}}", ".")
-	output, err := cmd.Output()
+	Path, err := filepath.Abs("")
 	if err != nil {
 		return
 	}
-	projectRoot = strings.TrimSpace(string(output)) //去掉空格
+	projectRoot = strings.TrimSpace(Path) //去掉空格
 	return
 }
 

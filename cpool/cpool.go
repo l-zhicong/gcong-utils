@@ -1,8 +1,13 @@
 package cpool
 
+import (
+	"context"
+)
+
 //TODO 等待子协程完事sync.WaitGroup
 
 type Pool struct {
+	ctx      context.Context
 	max      int   //最大携程数
 	count    Count //正在运行任务数量
 	taskList *TaskList
